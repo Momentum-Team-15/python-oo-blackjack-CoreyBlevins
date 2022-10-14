@@ -9,7 +9,10 @@ class Game:
         self.deck = Deck()
         self.player = Player()
         self.dealer = Dealer()
-        self.tally = 1
+        self.round = 1
+        self.player_score = 0
+        self.dealer_score = 0
+        self.money = 0
         self.start_game()
 
     def start_game(self):
@@ -22,8 +25,10 @@ class Game:
         self.deal_card(self.player)
         self.deal_card(self.dealer)
         self.deal_card(self.dealer)
-        print(f"Round: {self.tally}")
-        print(f"Deck is {len(self.deck.cards)}")
+        print(f"\nRound: {self.round}")
+        print(f"Dealer's wins: {self.dealer_score}")
+        print(f"Player's wins: {self.player_score}")
+        print(f"Winnings: {self.money} dollars")
         print("\nDealer's cards: ")
         print(f"{self.dealer.hand[0]}")
         print("???")
@@ -38,15 +43,20 @@ class Game:
         person.hand.append(card)
 
     def calculate_hand(self, person):
-        total_points = 0        
+        total_points = 0
         for card in person.hand:
             total_points += card.value
+            if card.value == 11 and total_points > 21:
+                total_points -= 10
         return total_points
-    
+
     def player_acts(self):
+        self.player_blackjack = False
         self.player_twenty_one = False
         if len(self.player.hand) == 2 and self.calculate_hand(self.player) == 21:
-            print("\n *Blackjack! You win!*")
+            print("\n *Blackjack!*")
+            self.player_blackjack = True
+            self.end_round_score()
             self.continue_playing()
         elif len(self.player.hand) > 2 and self.calculate_hand(self.player) == 21:
             self.player_twenty_one = True
@@ -57,6 +67,8 @@ class Game:
         elif self.calculate_hand(self.player) < 21:
             self.hit_or_stay()
         elif self.calculate_hand(self.player) > 21:
+            self.dealer_score += 1
+            self.money -= 10
             print("Bust!")
             self.continue_playing()
 
@@ -107,7 +119,6 @@ class Game:
             for card in self.dealer.hand:
                 print(card)
             print(f"Dealer's hand is worth: {self.calculate_hand(self.dealer)}")
-            print("Dealer bust!")
             self.end_round_score()
             self.continue_playing()
         else:
@@ -121,26 +132,43 @@ class Game:
     def end_round_score(self):
         print(f"\n  Player hand value: {self.calculate_hand(self.player)}")
         print(f"  Dealer hand value: {self.calculate_hand(self.dealer)}")
-        if self.dealer_blackjack is True:
+        if self.player_blackjack is True and self.dealer_blackjack is True:
+            print("    **You both have blackjack!**")
+            print("    Push")
+        elif self.player_blackjack is True:
+            print("    *You have blackjack!*")
+            self.player_score += 1
+            self.money += 25
+        elif self.dealer_blackjack is True:
             print("    *Dealer has blackjack!*")
+            self.dealer_score += 1
+            self.money -= 10
         elif self.dealer_twenty_one is True and self.player_twenty_one is False:
             print("    Dealer has 21!")
+            self.dealer_score += 1
+            self.money -= 10
         elif self.dealer_twenty_one is True and self.player_twenty_one is True:
             print("    Push")
         elif self.dealer_bust is True:
             print("    Dealer bust!")
+            self.player_score += 1
+            self.money += 10
         elif self.calculate_hand(self.player) > self.calculate_hand(self.dealer):
             print("    *Player wins!*")
+            self.player_score += 1
+            self.money += 10
         elif self.calculate_hand(self.player) == self.calculate_hand(self.dealer):
             print("    Push")
         else:
-            print("    Dealer wins.")         
+            print("    Dealer wins.")
+            self.dealer_score += 1
+            self.money -= 10
 
     def continue_playing(self):
         print("\nWould you like to keep playing?")
         play_response = input("Enter (y) for yes or (n) for no: ")
         if play_response == "y":
-            self.tally += 1
+            self.round += 1
             self.start_game()
         elif play_response == "n":
             exit()
